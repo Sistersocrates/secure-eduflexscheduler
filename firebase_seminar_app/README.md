@@ -67,22 +67,62 @@ VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 VITE_FIREBASE_APP_ID=your_app_id
 ```
 
-### 3. Firebase Configuration
+### 3. Database Seeding (Optional)
+
+This project includes a seed script to populate your Firestore database with initial data for the EduFlex Scheduler. This is useful for setting up a new environment for development or testing.
+
+**Prerequisites:**
+
+*   You must have a Firebase service account key. To generate one:
+    1.  Go to your Firebase project console.
+    2.  Click the gear icon next to "Project Overview" and select "Project settings".
+    3.  Go to the "Service accounts" tab.
+    4.  Click "Generate new private key". A JSON file will be downloaded.
+
+**Configuration:**
+
+1.  Place the downloaded JSON key file somewhere safe in your local environment. **Do not commit this file to your repository.**
+2.  Set the `GOOGLE_APPLICATION_CREDENTIALS` environment variable to the absolute path of this JSON file. For example:
+
+    *   **macOS/Linux:**
+        ```bash
+        export GOOGLE_APPLICATION_CREDENTIALS="/path/to/your/service-account-file.json"
+        ```
+    *   **Windows (Command Prompt):**
+        ```bash
+        set GOOGLE_APPLICATION_CREDENTIALS="C:\path\to\your\service-account-file.json"
+        ```
+    *   **Windows (PowerShell):**
+        ```powershell
+        $env:GOOGLE_APPLICATION_CREDENTIALS="C:\path\to\your\service-account-file.json"
+        ```
+
+**Running the Seed Script:**
+
+Once the environment variable is set, run the following command from the root of the `firebase-seminar-management` directory:
+
+```bash
+npm run seed
+```
+
+This will create the necessary collections and documents in your Firestore database.
+
+### 4. Firebase Configuration
 1. Enable Google Authentication in Firebase Console
 2. Set up Firestore database with security rules
 3. Add authorized domains for your application
 
-### 4. Development
+### 5. Development
 ```bash
 npm run dev
 ```
 
-### 5. Production Build
+### 6. Production Build
 ```bash
 npm run build
 ```
 
-### 6. Deploy to Firebase Hosting
+### 7. Deploy to Firebase Hosting
 ```bash
 firebase deploy --only hosting
 ```
