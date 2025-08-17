@@ -13,10 +13,10 @@ const TeacherNav = () => {
   };
 
   const navItems = [
-    { name: 'Dashboard', path: '/teacher/my-seminars', icon: Home },
+    { name: 'Dashboard', path: '/dashboard', icon: Home },
     { name: 'My Seminars', path: '/teacher/my-seminars', icon: BookOpen },
     { name: 'Create Seminar', path: '/teacher/create-seminar', icon: PlusCircle },
-    { name: 'Attendance History', path: '/teacher/attendance-history', icon: History },
+    { name: 'Attendance History', path: '/teacher/my-seminars', icon: History },
   ];
 
   const bottomNavItems = [

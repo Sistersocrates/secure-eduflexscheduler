@@ -67,7 +67,49 @@ const MySeminarsPage = () => {
           </button>
         </div>
       ) : (
-        <SeminarList seminars={seminars} setSeminars={setSeminars} />
+        <div className="space-y-6">
+          {seminars.map((seminar) => (
+            <div key={seminar.id} className="bg-white rounded-lg shadow-md p-6">
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">{seminar.title}</h2>
+                  <p className="text-gray-600">{seminar.description}</p>
+                  <div className="mt-2 flex items-center space-x-4 text-sm text-gray-500">
+                    <span>Hour {seminar.hour}</span>
+                    <span>Room: {seminar.location}</span>
+                    <span>Capacity: {seminar.currentEnrollment || 0}/{seminar.capacity}</span>
+                  </div>
+                </div>
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  seminar.isLocked ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+                }`}>
+                  {seminar.isLocked ? 'Locked' : 'Open'}
+                </span>
+              </div>
+              
+              <div className="flex gap-2">
+                <button
+                  onClick={() => navigate(`/teacher/roster/${seminar.id}`)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                >
+                  View Roster
+                </button>
+                <button
+                  onClick={() => navigate(`/teacher/attendance/${seminar.id}`)}
+                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+                >
+                  Attendance
+                </button>
+                <button
+                  onClick={() => navigate(`/teacher/edit-seminar/${seminar.id}`)}
+                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+                >
+                  Edit
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );
