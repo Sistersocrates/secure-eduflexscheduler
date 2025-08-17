@@ -64,6 +64,25 @@ function App() {
               </ProtectedRoute>
             } />
             
+            {/* Student routes */}
+            <Route path="/seminars" element={
+              <ProtectedRoute>
+                <DashboardPage />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/schedule" element={
+              <ProtectedRoute>
+                <DashboardPage />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/enrollments" element={
+              <ProtectedRoute>
+                <DashboardPage />
+              </ProtectedRoute>
+            } />
+            
             {/* Catch all route */}
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
