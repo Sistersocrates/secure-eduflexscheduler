@@ -49,6 +49,52 @@ A secure, FERPA-compliant student seminar management system built with React and
 
 ## 🚀 Quick Start
 
+### Important: Working Directory
+
+**All npm commands must be run from the `firebase_seminar_app` directory, not the root project directory.**
+
+```bash
+# Always navigate to the app directory first
+cd firebase_seminar_app
+
+# Then run your npm commands
+npm install
+npm run dev
+```
+
+### Helper Scripts and Aliases
+
+To avoid directory navigation issues, you can use the provided helper scripts:
+
+```bash
+# Make scripts executable
+chmod +x scripts/*.sh
+
+# Install dependencies
+./scripts/npm-install.sh
+
+# Start development server
+./scripts/npm-dev.sh
+
+# Build for production
+./scripts/npm-build.sh
+```
+
+**Optional: Add aliases to your shell**
+
+Add the contents of `.bashrc_additions` to your `~/.bashrc` or `~/.zshrc` file:
+
+```bash
+cat .bashrc_additions >> ~/.bashrc
+source ~/.bashrc
+```
+
+Then you can use convenient aliases:
+- `cdapp` - Navigate to app directory
+- `npm-app` - Run npm commands in app directory
+- `npm-dev` - Start development server
+- `appdev` - Navigate and start dev server in one command
+
 ### 1. Clone and Install
 ```bash
 git clone <repository-url>

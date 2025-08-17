@@ -1,0 +1,23 @@
+# Add these lines to your ~/.bashrc or ~/.zshrc file to create helpful aliases
+
+# Navigate to Firebase Seminar App directory
+alias cdapp='cd /home/project/firebase_seminar_app'
+
+# Run npm commands in the correct directory
+alias npm-app='cd /home/project/firebase_seminar_app && npm'
+alias npm-dev='cd /home/project/firebase_seminar_app && npm run dev'
+alias npm-build='cd /home/project/firebase_seminar_app && npm run build'
+alias npm-install='cd /home/project/firebase_seminar_app && npm install'
+
+# Quick navigation aliases
+alias app='cd /home/project/firebase_seminar_app'
+alias appdev='cd /home/project/firebase_seminar_app && npm run dev'
+
+echo "Firebase Seminar App aliases loaded!"
+echo "Available commands:"
+echo "  cdapp     - Navigate to app directory"
+echo "  npm-app   - Run npm commands in app directory"
+echo "  npm-dev   - Start development server"
+echo "  npm-build - Build the application"
+echo "  npm-install - Install dependencies"
+echo "  appdev    - Navigate and start dev server"
