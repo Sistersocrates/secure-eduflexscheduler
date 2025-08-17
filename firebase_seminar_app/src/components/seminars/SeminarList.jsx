@@ -1,16 +1,14 @@
 
 import React, { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { motion } from "framer-motion";
-import { useToast } from "@/components/ui/use-toast";
 import { Lock, Unlock, Users, ChevronDown, ChevronUp, Edit } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { db } from '../../lib/firebase';
 
 const SeminarList = ({ seminars, setSeminars }) => {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const [expandedPeriods, setExpandedPeriods] = React.useState({});
+  const [error, setError] = React.useState('');
 
   const periods = [
     { id: 1, name: "Hour 1 (9:00 - 9:45)" },
@@ -32,56 +30,35 @@ const SeminarList = ({ seminars, setSeminars }) => {
 
   const handleDelete = async (seminarId) => {
     try {
-      const { error } = await supabase
-        .from('seminars')
-        .delete()
-        .eq('id', seminarId);
-
-      if (error) throw error;
+      const seminarRef = doc(db, 'seminars', seminarId);
+      await deleteDoc(seminarRef);
 
       const updatedSeminars = seminars.filter((s) => s.id !== seminarId);
       setSeminars(updatedSeminars);
-      
-      toast({
-        title: "Success",
-        description: "Seminar deleted successfully",
-      });
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete seminar",
-        variant: "destructive",
-      });
+      setError("Failed to delete seminar");
+      console.error('Error deleting seminar:', error);
     }
   };
 
   const toggleLock = async (seminar) => {
     try {
-      const { error } = await supabase
-        .from('seminars')
-        .update({ is_locked: !seminar.is_locked })
-        .eq('id', seminar.id);
-
-      if (error) throw error;
+      const seminarRef = doc(db, 'seminars', seminar.id);
+      await updateDoc(seminarRef, { 
+        isLocked: !seminar.isLocked,
+        updatedAt: new Date()
+      });
 
       const updatedSeminars = seminars.map(s => {
         if (s.id === seminar.id) {
-          return { ...s, is_locked: !s.is_locked };
+          return { ...s, isLocked: !s.isLocked };
         }
         return s;
       });
       setSeminars(updatedSeminars);
-
-      toast({
-        title: seminar.is_locked ? "Seminar unlocked" : "Seminar locked",
-        description: `The seminar has been ${seminar.is_locked ? 'unlocked' : 'locked'} successfully.`,
-      });
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update seminar status",
-        variant: "destructive",
-      });
+      setError("Failed to update seminar status");
+      console.error('Error updating seminar:', error);
     }
   };
 
@@ -94,6 +71,12 @@ const SeminarList = ({ seminars, setSeminars }) => {
 
   return (
     <div className="space-y-6">
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+          {error}
+        </div>
+      )}
+      
       {periods.map((period) => {
         const periodSeminars = seminarsByPeriod[period.id] || [];
         const isExpanded = expandedPeriods[period.id] !== false;
@@ -129,9 +112,8 @@ const SeminarList = ({ seminars, setSeminars }) => {
                 ) : (
                   <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                     {periodSeminars.map((seminar) => (
-                      <motion.div
+                      <div
                         key={seminar.id}
-                        whileHover={{ scale: 1.02 }}
                         className="bg-white rounded-lg p-4 space-y-3 shadow-sm border border-gray-100 hover:shadow-md transition-shadow"
                       >
                         <div className="flex justify-between items-start">
@@ -139,65 +121,58 @@ const SeminarList = ({ seminars, setSeminars }) => {
                             {seminar.title}
                           </h4>
                           <span className={`text-xs px-2 py-1 rounded-full ${
-                            seminar.is_locked ? 'bg-red-100 text-red-800' : 
+                            seminar.isLocked ? 'bg-red-100 text-red-800' : 
                             'bg-green-100 text-green-800'
                           }`}>
-                            {seminar.is_locked ? 'Locked' : 'Open'}
+                            {seminar.isLocked ? 'Locked' : 'Open'}
                           </span>
                         </div>
                         
                         <div className="space-y-1 text-sm">
                           <p className="text-gray-600 line-clamp-2">{seminar.description}</p>
-                          <p className="text-gray-500">Room: {seminar.room}</p>
+                          <p className="text-gray-500">Room: {seminar.location}</p>
                           <p className="text-gray-500 flex items-center">
                             <Users className="w-4 h-4 mr-1" />
-                            {seminar.current_enrollment} / {seminar.capacity}
+                            {seminar.currentEnrollment || 0} / {seminar.capacity}
                           </p>
-                          {seminar.community_partner && (
+                          {seminar.communityPartner && (
                             <p className="text-gray-500 line-clamp-1">
-                              Partner: {seminar.community_partner}
+                              Partner: {seminar.communityPartner}
                             </p>
                           )}
                         </div>
 
                         <div className="flex flex-col gap-2">
                           <div className="flex gap-2">
-                            <Button
-                              size="sm"
+                            <button
                               onClick={() => navigate(`/teacher/attendance/${seminar.id}`)}
-                              className="flex-1"
+                              className="flex-1 bg-blue-600 text-white py-1 px-2 rounded text-sm hover:bg-blue-700"
                             >
                               Attendance
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
+                            </button>
+                            <button
                               onClick={() => navigate(`/teacher/edit-seminar/${seminar.id}`)}
-                              className="flex-1"
+                              className="flex-1 border border-gray-300 text-gray-700 py-1 px-2 rounded text-sm hover:bg-gray-50"
                             >
                               <Edit className="w-4 h-4" />
-                            </Button>
+                            </button>
                           </div>
                           <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
+                            <button
                               onClick={() => toggleLock(seminar)}
-                              className="flex-1"
+                              className="flex-1 border border-gray-300 text-gray-700 py-1 px-2 rounded text-sm hover:bg-gray-50"
                             >
-                              {seminar.is_locked ? <Unlock className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="destructive"
+                              {seminar.isLocked ? <Unlock className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+                            </button>
+                            <button
                               onClick={() => handleDelete(seminar.id)}
-                              className="flex-1"
+                              className="flex-1 bg-red-600 text-white py-1 px-2 rounded text-sm hover:bg-red-700"
                             >
                               Delete
-                            </Button>
+                            </button>
                           </div>
                         </div>
-                      </motion.div>
+                      </div>
                     ))}
                   </div>
                 )}

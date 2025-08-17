@@ -182,13 +182,25 @@ export const createOrUpdateStudent = async (userData) => {
 // SECURITY: Create seminar
 export const createSeminar = async (seminarData, userId) => {
   try {
-    const validatedData = seminarSchema.parse(seminarData);
+    // Basic validation instead of Zod for now
+    if (!seminarData.title || !seminarData.capacity || !seminarData.hour) {
+      throw new Error('Missing required fields');
+    }
     
     // SECURITY: Rate limiting
     checkRateLimit(userId, 'seminar_creation');
     
     const seminarRef = await addDoc(collection(db, 'seminars'), {
-      ...validatedData,
+      title: seminarData.title,
+      description: seminarData.description || '',
+      location: seminarData.location || seminarData.room || '',
+      capacity: parseInt(seminarData.capacity),
+      hour: parseInt(seminarData.hour),
+      date: seminarData.date || new Date().toISOString().split('T')[0],
+      communityPartner: seminarData.community_partner || '',
+      notes: seminarData.notes || '',
+      teacherEmail: seminarData.teacher_email || '',
+      teacherName: seminarData.teacher_name || '',
       createdBy: userId,
       currentEnrollment: 0,
       isLocked: false,
@@ -197,16 +209,14 @@ export const createSeminar = async (seminarData, userId) => {
     });
     
     await auditLog('seminar_created', userId, 'seminar', seminarRef.id, {
-      title: validatedData.title,
-      date: validatedData.date,
+      title: seminarData.title,
+      date: seminarData.date,
     });
     
-    return { id: seminarRef.id, ...validatedData };
+    return { id: seminarRef.id, ...seminarData, error: null };
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      throw new Error('Invalid seminar data provided');
-    }
-    throw error;
+    console.error('Error creating seminar:', error);
+    return { error: error.message };
   }
 };
 

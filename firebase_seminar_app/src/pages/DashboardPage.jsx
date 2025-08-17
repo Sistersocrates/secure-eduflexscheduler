@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../components/AuthProvider';
 import { getAllSeminars, getUserSeminars, enrollInSeminar } from '../lib/firebase';
 
 const DashboardPage = () => {
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   const [seminars, setSeminars] = useState([]);
   const [userSeminars, setUserSeminars] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -106,6 +108,21 @@ const DashboardPage = () => {
               <p className="text-gray-600 mb-6">
                 Welcome to your secure seminar management system powered by Google Firebase.
               </p>
+              
+              <div className="flex justify-center space-x-4 mb-6">
+                <button
+                  onClick={() => navigate('/teacher/my-seminars')}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                >
+                  Manage Seminars
+                </button>
+                <button
+                  onClick={() => navigate('/teacher/create-seminar')}
+                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+                >
+                  Create Seminar
+                </button>
+              </div>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
                 <div className="bg-white p-6 rounded-lg shadow border">
