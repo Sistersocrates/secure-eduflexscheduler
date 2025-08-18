@@ -1,13 +1,13 @@
 {
+  "headers": [
+    {
+      "source": "/(.*)",
       "headers": [
-              {
-                        "source": "/(.*)",
-                        "headers": [
-                                    { "key": "X-Frame-Options", "value": "DENY" }
-                        ]
-              }
-      ],
-      "rewrites": [
-              { "source": "/(.*)", "destination": "/" }
+        { "key": "X-Frame-Options", "value": "DENY" }
       ]
+    }
+  ],
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/" }
+  ]
 }
