@@ -110,18 +110,7 @@ const DashboardPage = () => {
               </p>
               
               <div className="flex justify-center space-x-4 mb-6">
-                <button
-                  onClick={() => navigate('/teacher/my-seminars')}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                >
-                  Manage Seminars
-                </button>
-                <button
-                  onClick={() => navigate('/teacher/create-seminar')}
-                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-                >
-                  Create Seminar
-                </button>
+                {/* Teacher-specific buttons removed */}
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
