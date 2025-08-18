@@ -8,8 +8,15 @@ import DashboardPage from './pages/DashboardPage';
 import MySeminarsPage from './pages/MySeminarsPage';
 import CreateSeminarPage from './pages/CreateSeminarPage';
 import EditSeminarPage from './pages/EditSeminarPage';
-import RosterPage from './pages/RosterPage';
+import SeminarRosterPage from './pages/SeminarRosterPage';
+import SeminarAttendancePage from './pages/SeminarAttendancePage';
+import TeacherDashboardPage from './pages/TeacherDashboardPage';
+import RostersPage from './pages/RostersPage';
 import AttendancePage from './pages/AttendancePage';
+import StudentCreditsPage from './pages/StudentCreditsPage';
+import AdvisoryStudentsPage from './pages/AdvisoryStudentsPage';
+import TransportationPage from './pages/TransportationPage';
+import FundingPage from './pages/FundingPage';
 
 function App() {
   return (
@@ -23,7 +30,7 @@ function App() {
             {/* Protected routes */}
             <Route path="/" element={
               <ProtectedRoute>
-                <Navigate to="/dashboard" replace />
+                <Navigate to="/teacher/dashboard" replace />
               </ProtectedRoute>
             } />
             
@@ -34,6 +41,11 @@ function App() {
             } />
             
             {/* Teacher routes */}
+            <Route path="/teacher/dashboard" element={
+              <ProtectedRoute>
+                <TeacherDashboardPage />
+              </ProtectedRoute>
+            } />
             <Route path="/teacher/my-seminars" element={
               <ProtectedRoute>
                 <MySeminarsPage />
@@ -54,13 +66,49 @@ function App() {
             
             <Route path="/teacher/roster/:seminarId" element={
               <ProtectedRoute>
-                <RosterPage />
+                <SeminarRosterPage />
               </ProtectedRoute>
             } />
             
             <Route path="/teacher/attendance/:seminarId" element={
               <ProtectedRoute>
+                <SeminarAttendancePage />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/teacher/rosters" element={
+              <ProtectedRoute>
+                <RostersPage />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/teacher/attendance" element={
+              <ProtectedRoute>
                 <AttendancePage />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/teacher/student-credits" element={
+              <ProtectedRoute>
+                <StudentCreditsPage />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/teacher/advisory-students" element={
+              <ProtectedRoute>
+                <AdvisoryStudentsPage />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/teacher/transportation" element={
+              <ProtectedRoute>
+                <TransportationPage />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/teacher/funding" element={
+              <ProtectedRoute>
+                <FundingPage />
               </ProtectedRoute>
             } />
             
@@ -84,7 +132,7 @@ function App() {
             } />
             
             {/* Catch all route */}
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            <Route path="*" element={<Navigate to="/teacher/dashboard" replace />} />
           </Routes>
         </Layout>
       </Router>

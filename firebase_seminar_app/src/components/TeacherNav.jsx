@@ -13,10 +13,15 @@ const TeacherNav = () => {
   };
 
   const navItems = [
-    { name: 'Dashboard', path: '/dashboard', icon: Home },
+    { name: 'Dashboard', path: '/teacher/dashboard', icon: Home },
     { name: 'My Seminars', path: '/teacher/my-seminars', icon: BookOpen },
     { name: 'Create Seminar', path: '/teacher/create-seminar', icon: PlusCircle },
-    { name: 'Attendance History', path: '/teacher/my-seminars', icon: History },
+    { name: 'Attendance', path: '/teacher/attendance', icon: History },
+    { name: 'Rosters', path: '/teacher/rosters', icon: Users },
+    { name: 'Student Credits', path: '/teacher/student-credits', icon: Users },
+    { name: 'Advisory Students', path: '/teacher/advisory-students', icon: Users },
+    { name: 'Transportation', path: '/teacher/transportation', icon: Users },
+    { name: 'Funding', path: '/teacher/funding', icon: Users },
   ];
 
   const bottomNavItems = [
