@@ -12,9 +12,18 @@ import TenantManagement from './TenantManagement';
 import SystemConfiguration from './SystemConfiguration';
 import ReportingDashboard from './ReportingDashboard';
 import SystemLogs from './SystemLogs';
+import ParentTours from './ParentTours';
+import AcademicsDashboard from './AcademicsDashboard';
+import AttendanceDashboard from './AttendanceDashboard';
+import MeetingScheduling from './MeetingScheduling';
+import SchedulingDashboard from './SchedulingDashboard';
 import { 
   Users,
   Building2,
+  Book,
+  ClipboardCheck,
+  CalendarPlus,
+  CalendarCog,
   Settings,
   BarChart3,
   FileText,
@@ -462,6 +471,11 @@ const AdminDashboard = () => {
             { id: 'settings', name: 'System Settings', icon: Settings },
             { id: 'reports', name: 'Reports', icon: BarChart3 },
             { id: 'logs', name: 'System Logs', icon: FileText },
+            { id: 'tours', name: 'Parent Tours', icon: Calendar },
+            { id: 'academics', name: 'Academics', icon: Book },
+            { id: 'attendance', name: 'Attendance', icon: ClipboardCheck },
+            { id: 'meetings', name: 'Meetings', icon: CalendarPlus },
+            { id: 'scheduling', name: 'Scheduling', icon: CalendarCog },
             { id: 'security', name: 'Security', icon: Shield }
           ].map(tab => {
             const Icon = tab.icon;
@@ -491,6 +505,11 @@ const AdminDashboard = () => {
         {activeTab === 'settings' && <SystemConfiguration />}
         {activeTab === 'reports' && <ReportingDashboard />}
         {activeTab === 'logs' && <SystemLogs />}
+        {activeTab === 'tours' && <ParentTours />}
+        {activeTab === 'academics' && <AcademicsDashboard />}
+        {activeTab === 'attendance' && <AttendanceDashboard />}
+        {activeTab === 'meetings' && <MeetingScheduling />}
+        {activeTab === 'scheduling' && <SchedulingDashboard />}
         {activeTab === 'security' && (
           <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
             <Shield className="h-12 w-12 text-gray-400 mx-auto mb-4" />

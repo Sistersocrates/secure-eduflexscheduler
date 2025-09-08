@@ -532,6 +532,339 @@ export const updateAcademicTerm = async (termId, updates) => {
   }
 };
 
+// ==================== CREDIT MANAGEMENT ====================
+
+/**
+ * Get all credits for a specific student
+ */
+export const getStudentCredits = async (studentId) => {
+  try {
+    const credits = [];
+    const q = query(collection(db, 'credits'), where('studentId', '==', studentId), orderBy('dateAwarded', 'desc'));
+    const snapshot = await getDocs(q);
+    snapshot.forEach(doc => {
+      credits.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+    return credits;
+  } catch (error) {
+    console.error('Error getting student credits:', error);
+    throw error;
+  }
+};
+
+/**
+ * Add a new credit to a student's record
+ */
+export const addStudentCredit = async (studentId, creditData) => {
+  try {
+    const creditDoc = {
+      studentId,
+      ...creditData,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    };
+    const docRef = await addDoc(collection(db, 'credits'), creditDoc);
+    await logAdminAction('credit_added', 'credit', docRef.id, { studentId, ...creditData });
+    return {
+      id: docRef.id,
+      ...creditDoc
+    };
+  } catch (error) {
+    console.error('Error adding student credit:', error);
+    throw error;
+  }
+};
+
+/**
+ * Update an existing credit
+ */
+export const updateStudentCredit = async (creditId, updates) => {
+  try {
+    const creditRef = doc(db, 'credits', creditId);
+    const updateData = {
+      ...updates,
+      updatedAt: serverTimestamp()
+    };
+    await updateDoc(creditRef, updateData);
+    await logAdminAction('credit_updated', 'credit', creditId, updates);
+    return updateData;
+  } catch (error) {
+    console.error('Error updating student credit:', error);
+    throw error;
+  }
+};
+
+/**
+ * Delete a credit
+ */
+export const deleteStudentCredit = async (creditId) => {
+  try {
+    const creditRef = doc(db, 'credits', creditId);
+    await deleteDoc(creditRef);
+    await logAdminAction('credit_deleted', 'credit', creditId, {});
+  } catch (error) {
+    console.error('Error deleting student credit:', error);
+    throw error;
+  }
+};
+
+// ==================== ATTENDANCE MANAGEMENT ====================
+
+/**
+ * Get attendance records with filtering
+ */
+export const getAttendanceRecords = async (tenantId, filters = {}) => {
+  try {
+    const { date, studentId, courseId } = filters;
+    let q = collection(db, 'attendance');
+    const constraints = [where('tenantId', '==', tenantId)];
+
+    if (date) {
+      const start = new Date(date);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(date);
+      end.setHours(23, 59, 59, 999);
+      constraints.push(where('date', '>=', start));
+      constraints.push(where('date', '<=', end));
+    }
+    if (studentId) {
+      constraints.push(where('studentId', '==', studentId));
+    }
+    if (courseId) {
+      constraints.push(where('courseId', '==', courseId));
+    }
+    constraints.push(orderBy('date', 'desc'));
+
+    q = query(q, ...constraints);
+    const snapshot = await getDocs(q);
+    const records = [];
+    snapshot.forEach(doc => {
+      records.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+    return records;
+  } catch (error) {
+    console.error('Error getting attendance records:', error);
+    throw error;
+  }
+};
+
+// ==================== SCHEDULING ====================
+
+// Course Management
+export const getCourses = async (tenantId) => {
+    const q = query(collection(db, 'courses'), where('tenantId', '==', tenantId));
+    const snapshot = await getDocs(q);
+    const courses = [];
+    snapshot.forEach(doc => courses.push({ id: doc.id, ...doc.data() }));
+    return courses;
+};
+export const createCourse = async (courseData) => {
+    const docRef = await addDoc(collection(db, 'courses'), { ...courseData, createdAt: serverTimestamp() });
+    return { id: docRef.id, ...courseData };
+};
+export const updateCourse = async (courseId, updates) => {
+    await updateDoc(doc(db, 'courses', courseId), { ...updates, updatedAt: serverTimestamp() });
+};
+export const deleteCourse = async (courseId) => {
+    await deleteDoc(doc(db, 'courses', courseId));
+};
+
+// Class Schedule Management
+export const getClassSchedules = async (tenantId) => {
+    const q = query(collection(db, 'classSchedules'), where('tenantId', '==', tenantId));
+    const snapshot = await getDocs(q);
+    const schedules = [];
+    snapshot.forEach(doc => schedules.push({ id: doc.id, ...doc.data() }));
+    return schedules;
+};
+export const createClassSchedule = async (scheduleData) => {
+    const docRef = await addDoc(collection(db, 'classSchedules'), { ...scheduleData, createdAt: serverTimestamp() });
+    return { id: docRef.id, ...scheduleData };
+};
+export const updateClassSchedule = async (scheduleId, updates) => {
+    await updateDoc(doc(db, 'classSchedules', scheduleId), { ...updates, updatedAt: serverTimestamp() });
+};
+export const deleteClassSchedule = async (scheduleId) => {
+    await deleteDoc(doc(db, 'classSchedules', scheduleId));
+};
+
+// Teacher Schedule Management
+export const getTeacherSchedules = async (tenantId, teacherId) => {
+    const q = query(collection(db, 'classSchedules'), where('tenantId', '==', tenantId), where('teacherId', '==', teacherId));
+    const snapshot = await getDocs(q);
+    const schedules = [];
+    snapshot.forEach(doc => schedules.push({ id: doc.id, ...doc.data() }));
+    return schedules;
+};
+export const assignTeacherToClass = async (teacherId, classScheduleId) => {
+    await updateDoc(doc(db, 'classSchedules', classScheduleId), { teacherId });
+};
+
+// Student Schedule Management
+export const getStudentSchedules = async (tenantId, studentId) => {
+    const q = query(collection(db, 'studentSchedules'), where('tenantId', '==', tenantId), where('studentId', '==', studentId));
+    const snapshot = await getDocs(q);
+    const schedules = [];
+    snapshot.forEach(doc => schedules.push({ id: doc.id, ...doc.data() }));
+    return schedules;
+};
+export const enrollStudentInClass = async (studentId, classScheduleId) => {
+    const docRef = await addDoc(collection(db, 'studentSchedules'), { studentId, classScheduleId, createdAt: serverTimestamp() });
+    return { id: docRef.id, studentId, classScheduleId };
+};
+
+
+// ==================== MEETING SCHEDULING ====================
+
+/**
+ * Get meetings with filtering
+ */
+export const getMeetings = async (tenantId, filters = {}) => {
+    try {
+        const { startDate, endDate } = filters;
+        let q = collection(db, 'meetings');
+        const constraints = [where('tenantId', '==', tenantId)];
+
+        if (startDate) {
+            constraints.push(where('startTime', '>=', startDate));
+        }
+        if (endDate) {
+            constraints.push(where('startTime', '<=', endDate));
+        }
+        constraints.push(orderBy('startTime', 'desc'));
+
+        q = query(q, ...constraints);
+        const snapshot = await getDocs(q);
+        const meetings = [];
+        snapshot.forEach(doc => {
+            meetings.push({
+                id: doc.id,
+                ...doc.data()
+            });
+        });
+        return meetings;
+    } catch (error) {
+        console.error('Error getting meetings:', error);
+        throw error;
+    }
+};
+
+/**
+ * Create a new meeting
+ */
+export const createMeeting = async (meetingData) => {
+    try {
+        const meetingDoc = {
+            ...meetingData,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+        };
+        const docRef = await addDoc(collection(db, 'meetings'), meetingDoc);
+        await logAdminAction('meeting_created', 'meeting', docRef.id, meetingData);
+        return {
+            id: docRef.id,
+            ...meetingDoc
+        };
+    } catch (error) {
+        console.error('Error creating meeting:', error);
+        throw error;
+    }
+};
+
+/**
+ * Update an existing meeting
+ */
+export const updateMeeting = async (meetingId, updates) => {
+    try {
+        const meetingRef = doc(db, 'meetings', meetingId);
+        const updateData = {
+            ...updates,
+            updatedAt: serverTimestamp()
+        };
+        await updateDoc(meetingRef, updateData);
+        await logAdminAction('meeting_updated', 'meeting', meetingId, updates);
+        return updateData;
+    } catch (error) {
+        console.error('Error updating meeting:', error);
+        throw error;
+    }
+};
+
+/**
+ * Delete a meeting
+ */
+export const deleteMeeting = async (meetingId) => {
+    try {
+        const meetingRef = doc(db, 'meetings', meetingId);
+        await deleteDoc(meetingRef);
+        await logAdminAction('meeting_deleted', 'meeting', meetingId, {});
+    } catch (error) {
+        console.error('Error deleting meeting:', error);
+        throw error;
+    }
+};
+
+// ==================== STUDENT LOCATION ====================
+
+/**
+ * Get student location schedule with filtering
+ */
+export const getStudentLocationSchedule = async (tenantId, filters = {}) => {
+  try {
+    const { time, search } = filters;
+    // This is a simplified filter. A real implementation might need more complex queries.
+    let q = collection(db, 'studentLocations');
+    const constraints = [where('tenantId', '==', tenantId)];
+
+    if (time) {
+      // This is a simplified time filter. A real implementation would need to handle time ranges.
+      constraints.push(where('time', '==', time));
+    }
+
+    q = query(q, ...constraints);
+    const snapshot = await getDocs(q);
+    const schedule = [];
+    snapshot.forEach(doc => {
+        const data = doc.data();
+        if (!search || data.studentName.toLowerCase().includes(search.toLowerCase()) || data.location.toLowerCase().includes(search.toLowerCase())) {
+            schedule.push({
+                id: doc.id,
+                ...data
+            });
+        }
+    });
+    return schedule;
+  } catch (error) {
+    console.error('Error getting student location schedule:', error);
+    throw error;
+  }
+};
+
+/**
+ * Update a student's location
+ */
+export const updateStudentLocation = async (locationId, updates) => {
+    try {
+        const locationRef = doc(db, 'studentLocations', locationId);
+        const updateData = {
+            ...updates,
+            updatedAt: serverTimestamp()
+        };
+        await updateDoc(locationRef, updateData);
+        await logAdminAction('student_location_updated', 'studentLocation', locationId, updates);
+        return updateData;
+    } catch (error) {
+        console.error('Error updating student location:', error);
+        throw error;
+    }
+};
+
 // ==================== CREDIT TYPES ====================
 
 /**
@@ -1030,26 +1363,97 @@ const generateUserSummaryReport = async (tenantId, parameters) => {
  * Generate credit tracking report
  */
 const generateCreditTrackingReport = async (tenantId, parameters) => {
-  // This would aggregate credit data from enrollments and completions
-  return {
+  const creditsSnapshot = await getDocs(
+    query(collection(db, 'credits'), where('tenantId', '==', tenantId))
+  );
+
+  const report = {
     totalCreditsAwarded: 0,
     creditsByType: {},
-    studentProgress: [],
+    studentProgress: {},
     deficiencies: []
   };
+
+  const studentsSnapshot = await getDocs(
+    query(collection(db, 'users'), where('tenantId', '==', tenantId), where('role', '==', 'student'))
+  );
+
+  const studentsById = {};
+  studentsSnapshot.forEach(doc => {
+    studentsById[doc.id] = doc.data();
+  });
+
+  creditsSnapshot.forEach(doc => {
+    const credit = doc.data();
+    report.totalCreditsAwarded += credit.creditsEarned;
+
+    // Credits by type
+    const creditType = credit.type || 'uncategorized';
+    report.creditsByType[creditType] = (report.creditsByType[creditType] || 0) + credit.creditsEarned;
+
+    // Student progress
+    const studentId = credit.studentId;
+    if (studentsById[studentId]) {
+      if (!report.studentProgress[studentId]) {
+        report.studentProgress[studentId] = {
+          name: studentsById[studentId].displayName,
+          totalCredits: 0,
+          credits: []
+        };
+      }
+      report.studentProgress[studentId].totalCredits += credit.creditsEarned;
+      report.studentProgress[studentId].credits.push(credit);
+    }
+  });
+
+  return report;
 };
 
 /**
  * Generate attendance summary report
  */
 const generateAttendanceSummaryReport = async (tenantId, parameters) => {
-  // This would aggregate attendance data
-  return {
-    overallAttendanceRate: 0,
-    attendanceByClass: {},
-    attendanceTrends: [],
+  const { dateRange } = parameters;
+  const attendanceSnapshot = await getDocs(
+    query(collection(db, 'attendance'), where('tenantId', '==', tenantId), where('date', '>=', dateRange.start), where('date', '<=', dateRange.end))
+  );
+
+  const report = {
+    totalRecords: attendanceSnapshot.size,
+    byStatus: {},
+    byCourse: {},
     absenteeism: []
   };
+
+  attendanceSnapshot.forEach(doc => {
+    const record = doc.data();
+
+    // By status
+    report.byStatus[record.status] = (report.byStatus[record.status] || 0) + 1;
+
+    // By course
+    const courseName = record.courseName || 'Unknown Course';
+    if (!report.byCourse[courseName]) {
+      report.byCourse[courseName] = { present: 0, absent: 0, tardy: 0 };
+    }
+    if (record.status === 'Present') report.byCourse[courseName].present++;
+    else if (record.status === 'Absent') report.byCourse[courseName].absent++;
+    else if (record.status === 'Tardy') report.byCourse[courseName].tardy++;
+
+    // Absenteeism
+    if (record.status === 'Absent') {
+      report.absenteeism.push({
+        studentName: record.studentName,
+        date: record.date,
+        courseName: record.courseName
+      });
+    }
+  });
+
+  const totalPresent = report.byStatus['Present'] || 0;
+  report.overallAttendanceRate = (totalPresent / report.totalRecords) * 100;
+
+  return report;
 };
 
 /**
@@ -1091,7 +1495,40 @@ export default {
   // Credit Types
   getCreditTypes,
   createCreditType,
+
+  // Credit Management
+  getStudentCredits,
+  addStudentCredit,
+  updateStudentCredit,
+  deleteStudentCredit,
+
+  // Attendance Management
+  getAttendanceRecords,
+
+  // Student Location
+  getStudentLocationSchedule,
+  updateStudentLocation,
   
+  // Meeting Scheduling
+  getMeetings,
+  createMeeting,
+  updateMeeting,
+  deleteMeeting,
+
+  // Scheduling
+  getCourses,
+  createCourse,
+  updateCourse,
+  deleteCourse,
+  getClassSchedules,
+  createClassSchedule,
+  updateClassSchedule,
+  deleteClassSchedule,
+  getTeacherSchedules,
+  assignTeacherToClass,
+  getStudentSchedules,
+  enrollStudentInClass,
+
   // Reports
   getReports,
   createReport,
