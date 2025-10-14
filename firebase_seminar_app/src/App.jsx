@@ -17,6 +17,12 @@ import StudentCreditsPage from './pages/StudentCreditsPage';
 import AdvisoryStudentsPage from './pages/AdvisoryStudentsPage';
 import TransportationPage from './pages/TransportationPage';
 import FundingPage from './pages/FundingPage';
+import StudentDashboardPage from './pages/StudentDashboardPage';
+import BrowseSeminarsPage from './pages/BrowseSeminarsPage';
+import MyEnrollmentsPage from './pages/MyEnrollmentsPage';
+import MySchedulePage from './pages/MySchedulePage';
+import MyAttendancePage from './pages/MyAttendancePage';
+import MyCreditsPage from './pages/MyCreditsPage';
 
 function App() {
   return (
@@ -113,21 +119,39 @@ function App() {
             } />
             
             {/* Student routes */}
-            <Route path="/seminars" element={
+            <Route path="/student/dashboard" element={
               <ProtectedRoute>
-                <DashboardPage />
+                <StudentDashboardPage />
               </ProtectedRoute>
             } />
             
-            <Route path="/schedule" element={
+            <Route path="/student/browse-seminars" element={
               <ProtectedRoute>
-                <DashboardPage />
+                <BrowseSeminarsPage />
               </ProtectedRoute>
             } />
             
-            <Route path="/enrollments" element={
+            <Route path="/student/enrollments" element={
               <ProtectedRoute>
-                <DashboardPage />
+                <MyEnrollmentsPage />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/student/schedule" element={
+              <ProtectedRoute>
+                <MySchedulePage />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/student/attendance" element={
+              <ProtectedRoute>
+                <MyAttendancePage />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/student/credits" element={
+              <ProtectedRoute>
+                <MyCreditsPage />
               </ProtectedRoute>
             } />
             
