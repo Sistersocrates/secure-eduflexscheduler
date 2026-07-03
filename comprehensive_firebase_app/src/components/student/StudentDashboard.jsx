@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../AuthProvider';
 import { 
   getStudentSchedule, 
   getStudentEnrollments, 
@@ -15,7 +15,7 @@ import QuickActions from './QuickActions';
 import { Calendar, BookOpen, Award, Bell, Clock, TrendingUp } from 'lucide-react';
 
 const StudentDashboard = () => {
-  const { currentUser } = useAuth();
+  const { user: currentUser } = useAuth();
   const [loading, setLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState({
     schedule: [],
