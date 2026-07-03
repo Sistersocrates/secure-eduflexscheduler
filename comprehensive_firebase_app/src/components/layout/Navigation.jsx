@@ -24,7 +24,8 @@ import {
   Target,
   Database,
   Building2,
-  Monitor
+  Monitor,
+  MapPin
 } from 'lucide-react';
 
 const Navigation = () => {
@@ -86,6 +87,7 @@ const Navigation = () => {
       ],
       admin: [
         { name: 'System Overview', href: '/admin', icon: Monitor },
+        { name: 'Office Hub', href: '/office', icon: MapPin },
         { name: 'User Management', href: '/admin/users', icon: Users },
         { name: 'Tenant Management', href: '/admin/tenants', icon: Building2 },
         { name: 'System Settings', href: '/admin/settings', icon: Settings },
