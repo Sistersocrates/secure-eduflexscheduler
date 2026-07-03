@@ -10,6 +10,16 @@ import AdminDashboard from './components/admin/AdminDashboard';
 import ClassManagement from './components/teacher/ClassManagement';
 import OfficeDashboard from './components/admin/OfficeDashboard';
 import AttendanceManagement from './components/teacher/AttendanceManagement';
+import ResourceManagement from './components/teacher/ResourceManagement';
+import GradingManagement from './components/teacher/GradingManagement';
+import AppointmentManagement from './components/specialist/AppointmentManagement';
+import StudentNotesManagement from './components/specialist/StudentNotesManagement';
+import InterventionPlansManagement from './components/specialist/InterventionPlansManagement';
+import ComprehensiveSpecialistDashboard from './components/specialist/ComprehensiveSpecialistDashboard';
+import BrowseSeminars from './pages/BrowseSeminars';
+import MySchedule from './pages/MySchedule';
+import MyEnrollments from './pages/MyEnrollments';
+import BookAppointment from './pages/BookAppointment';
 
 // Placeholder components for future implementation
 const PlaceholderPage = ({ title, description }) => (
@@ -45,46 +55,31 @@ function App() {
             {/* Student Routes */}
             <Route path="/seminars" element={
               <ProtectedRoute>
-                <PlaceholderPage 
-                  title="Browse Seminars" 
-                  description="Discover and enroll in available seminars"
-                />
+                <BrowseSeminars />
               </ProtectedRoute>
             } />
             
             <Route path="/schedule" element={
               <ProtectedRoute>
-                <PlaceholderPage 
-                  title="My Schedule" 
-                  description="View your personal schedule and upcoming events"
-                />
+                <MySchedule />
               </ProtectedRoute>
             } />
             
             <Route path="/enrollments" element={
               <ProtectedRoute>
-                <PlaceholderPage 
-                  title="My Enrollments" 
-                  description="Manage your seminar enrollments"
-                />
+                <MyEnrollments />
               </ProtectedRoute>
             } />
             
             <Route path="/waitlists" element={
               <ProtectedRoute>
-                <PlaceholderPage 
-                  title="Waitlists" 
-                  description="View and manage your waitlist positions"
-                />
+                <MyEnrollments />
               </ProtectedRoute>
             } />
             
             <Route path="/appointments" element={
               <ProtectedRoute>
-                <PlaceholderPage 
-                  title="Appointments" 
-                  description="Schedule and manage counseling appointments"
-                />
+                <BookAppointment />
               </ProtectedRoute>
             } />
             
@@ -112,10 +107,7 @@ function App() {
             
             <Route path="/rosters" element={
               <ProtectedRoute>
-                <PlaceholderPage 
-                  title="Student Rosters" 
-                  description="View and manage student rosters for your seminars"
-                />
+                <ClassManagement />
               </ProtectedRoute>
             } />
             
@@ -127,10 +119,7 @@ function App() {
             
             <Route path="/grading" element={
               <ProtectedRoute>
-                <PlaceholderPage 
-                  title="Grading" 
-                  description="Grade assignments and manage student assessments"
-                />
+                <GradingManagement />
               </ProtectedRoute>
             } />
             
@@ -155,28 +144,19 @@ function App() {
             {/* Counselor Routes */}
             <Route path="/student-management" element={
               <ProtectedRoute>
-                <PlaceholderPage 
-                  title="Student Management" 
-                  description="Manage and support student academic journeys"
-                />
+                <ComprehensiveSpecialistDashboard />
               </ProtectedRoute>
             } />
             
             <Route path="/counselor-appointments" element={
               <ProtectedRoute>
-                <PlaceholderPage 
-                  title="Counselor Appointments" 
-                  description="Manage counseling appointments and sessions"
-                />
+                <AppointmentManagement />
               </ProtectedRoute>
             } />
             
             <Route path="/student-progress" element={
               <ProtectedRoute>
-                <PlaceholderPage 
-                  title="Student Progress" 
-                  description="Monitor and track student academic progress"
-                />
+                <ComprehensiveSpecialistDashboard />
               </ProtectedRoute>
             } />
             
@@ -191,10 +171,7 @@ function App() {
             
             <Route path="/resources" element={
               <ProtectedRoute>
-                <PlaceholderPage 
-                  title="Resources" 
-                  description="Access teaching resources and materials"
-                />
+                <ResourceManagement />
               </ProtectedRoute>
             } />
             
@@ -207,37 +184,25 @@ function App() {
             
             <Route path="/specialist-appointments" element={
               <ProtectedRoute requiredRole="specialist">
-                <PlaceholderPage 
-                  title="Specialist Appointments" 
-                  description="Manage student appointments and sessions"
-                />
+                <AppointmentManagement />
               </ProtectedRoute>
             } />
             
             <Route path="/student-notes" element={
               <ProtectedRoute requiredRole="specialist">
-                <PlaceholderPage 
-                  title="Student Notes" 
-                  description="FERPA-compliant student record management"
-                />
+                <StudentNotesManagement />
               </ProtectedRoute>
             } />
             
             <Route path="/intervention-plans" element={
               <ProtectedRoute requiredRole="specialist">
-                <PlaceholderPage 
-                  title="Intervention Plans" 
-                  description="Create and manage student intervention plans"
-                />
+                <InterventionPlansManagement />
               </ProtectedRoute>
             } />
             
             <Route path="/progress-tracking" element={
               <ProtectedRoute requiredRole="specialist">
-                <PlaceholderPage 
-                  title="Progress Tracking" 
-                  description="Track student progress and outcomes"
-                />
+                <ComprehensiveSpecialistDashboard />
               </ProtectedRoute>
             } />
             
@@ -261,10 +226,7 @@ function App() {
             
             <Route path="/specialist-analytics" element={
               <ProtectedRoute requiredRole="specialist">
-                <PlaceholderPage 
-                  title="Specialist Analytics" 
-                  description="View specialist performance analytics and reports"
-                />
+                <ComprehensiveSpecialistDashboard />
               </ProtectedRoute>
             } />
             
