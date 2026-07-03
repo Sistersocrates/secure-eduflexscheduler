@@ -64,6 +64,36 @@ export const signOutUser = async () => {
   }
 };
 
+
+// ============ Access control (roster + domain restriction) ============
+
+const DEFAULT_ACCESS_CONTROL = {
+  allowedDomains: ['rochesterschools.org'],
+  enforceRoster: true,
+  tenantId: 'default'
+};
+
+export const getAccessControl = async () => {
+  try {
+    const snap = await getDoc(doc(db, 'systemSettings', 'accessControl'));
+    if (snap.exists()) return { ...DEFAULT_ACCESS_CONTROL, ...snap.data() };
+    return DEFAULT_ACCESS_CONTROL;
+  } catch (error) {
+    console.error('Error reading access control settings:', error);
+    return DEFAULT_ACCESS_CONTROL;
+  }
+};
+
+export const getRosterEntry = async (email) => {
+  try {
+    const snap = await getDoc(doc(db, 'roster', (email || '').toLowerCase()));
+    return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+  } catch (error) {
+    console.error('Error reading roster entry:', error);
+    return null;
+  }
+};
+
 // User management functions
 export const createUserProfile = async (user, additionalData = {}) => {
   if (!user) return;
@@ -74,17 +104,57 @@ export const createUserProfile = async (user, additionalData = {}) => {
   if (!userSnap.exists()) {
     const { displayName, email, photoURL } = user;
     const createdAt = serverTimestamp();
-    
+
+    // --- Access control: applies to NEW registrations only ---
+    const emailLower = (email || '').toLowerCase();
+    const ac = await getAccessControl();
+    const domains = (ac.allowedDomains || [])
+      .map((d) => d.toLowerCase().replace(/^@/, '').trim())
+      .filter(Boolean);
+    if (domains.length && !domains.some((d) => emailLower.endsWith('@' + d))) {
+      await signOut(auth);
+      throw new Error(
+        'Only ' + domains.map((d) => '@' + d).join(' or ') + ' accounts can sign in. Please use your school account.'
+      );
+    }
+
+    let authorizedRole = additionalData.role || 'student';
+    let rosterExtras = {};
+    if (ac.enforceRoster !== false) {
+      const entry = await getRosterEntry(emailLower);
+      if (!entry) {
+        await signOut(auth);
+        throw new Error('Your email is not on the school roster yet. Please contact the front office to be added.');
+      }
+      // The roster is authoritative for role assignment
+      authorizedRole = entry.role || authorizedRole;
+      rosterExtras = {
+        studentId: entry.studentId || additionalData.studentId || '',
+        gradeLevel: entry.gradeLevel ?? additionalData.gradeLevel ?? null,
+        tenantId: entry.tenantId || ac.tenantId || 'default'
+      };
+      try {
+        await updateDoc(doc(db, 'roster', emailLower), {
+          status: 'active',
+          uid: user.uid,
+          activatedAt: serverTimestamp()
+        });
+      } catch (e) {
+        console.warn('Could not update roster entry status:', e);
+      }
+    }
+
     try {
       await setDoc(userRef, {
         displayName,
         email,
         photoURL,
-        role: additionalData.role || 'student',
-        studentId: additionalData.studentId || '',
+        ...rosterExtras,
+        role: authorizedRole,
+        studentId: rosterExtras.studentId ?? (additionalData.studentId || ''),
         department: additionalData.department || '',
         phone: additionalData.phone || '',
-        gradeLevel: additionalData.gradeLevel || null,
+        gradeLevel: rosterExtras.gradeLevel ?? (additionalData.gradeLevel || null),
         graduationYear: additionalData.graduationYear || null,
         status: 'active',
         createdAt,
@@ -94,7 +164,7 @@ export const createUserProfile = async (user, additionalData = {}) => {
       
       // Create audit log
       await createAuditLog(user.uid, 'user_created', 'users', user.uid, {
-        role: additionalData.role || 'student',
+        role: authorizedRole,
         email: email
       });
       
@@ -578,3 +648,90 @@ export const createTimestamp = (date) => {
 
 export default app;
 
+
+// ============ Drop class + waitlist auto-promotion ============
+
+export const promoteFromWaitlist = async (classId) => {
+  try {
+    const q = query(collection(db, 'enrollments'), where('classId', '==', classId));
+    const snap = await getDocs(q);
+    const waitlisted = snap.docs
+      .map((d) => ({ id: d.id, ...d.data() }))
+      .filter((e) => e.status === 'waitlisted')
+      .sort(
+        (a, b) =>
+          (a.waitlistPosition ?? 9999) - (b.waitlistPosition ?? 9999) ||
+          (a.enrollmentDate?.seconds ?? 0) - (b.enrollmentDate?.seconds ?? 0)
+      );
+
+    if (!waitlisted.length) return null;
+
+    const next = waitlisted[0];
+    await updateDoc(doc(db, 'enrollments', next.id), {
+      status: 'enrolled',
+      waitlistPosition: null,
+      promotedAt: serverTimestamp()
+    });
+
+    // Shift remaining waitlist positions up
+    for (let i = 1; i < waitlisted.length; i++) {
+      if (waitlisted[i].waitlistPosition) {
+        await updateDoc(doc(db, 'enrollments', waitlisted[i].id), {
+          waitlistPosition: waitlisted[i].waitlistPosition - 1
+        });
+      }
+    }
+
+    await createNotification({
+      userId: next.studentId,
+      type: 'enrollment',
+      title: "You're enrolled!",
+      message: 'A seat opened up and you were automatically enrolled from the waitlist.',
+      read: false
+    });
+    await createAuditLog(next.studentId, 'waitlist_promoted', 'enrollments', next.id, { classId });
+    return next;
+  } catch (error) {
+    console.error('Error promoting from waitlist:', error);
+    return null;
+  }
+};
+
+export const dropClass = async (studentId, enrollmentId) => {
+  try {
+    const enrollmentRef = doc(db, 'enrollments', enrollmentId);
+    const snap = await getDoc(enrollmentRef);
+    if (!snap.exists()) throw new Error('Enrollment not found');
+
+    const enrollment = snap.data();
+    if (enrollment.studentId !== studentId) {
+      throw new Error('You can only drop your own enrollments');
+    }
+    if (enrollment.status === 'dropped') return true;
+
+    const wasEnrolled = enrollment.status === 'enrolled';
+    await updateDoc(enrollmentRef, { status: 'dropped', droppedAt: serverTimestamp() });
+
+    const classRef = doc(db, 'classes', enrollment.classId);
+    const classSnap = await getDoc(classRef);
+    if (classSnap.exists()) {
+      const current = classSnap.data().currentEnrollment || 0;
+      await updateDoc(classRef, {
+        currentEnrollment: Math.max(current - 1, 0),
+        updatedAt: serverTimestamp()
+      });
+    }
+
+    await createAuditLog(studentId, 'class_dropped', 'enrollments', enrollmentId, {
+      classId: enrollment.classId
+    });
+
+    if (wasEnrolled) {
+      await promoteFromWaitlist(enrollment.classId);
+    }
+    return true;
+  } catch (error) {
+    console.error('Error dropping class:', error);
+    throw error;
+  }
+};

@@ -3,6 +3,7 @@ import {
   doc, 
   getDocs, 
   getDoc, 
+  setDoc, 
   addDoc, 
   updateDoc, 
   deleteDoc, 
@@ -1548,3 +1549,80 @@ export default {
   getSystemAnalytics
 };
 
+
+// ============ Roster import & access control (school onboarding) ============
+
+export const importRoster = async (entries, tenantId = 'default') => {
+  const results = { successful: 0, failed: [], total: entries.length };
+  const CHUNK = 400;
+
+  for (let i = 0; i < entries.length; i += CHUNK) {
+    const batch = writeBatch(db);
+    const chunk = entries.slice(i, i + CHUNK);
+    for (const entry of chunk) {
+      const email = (entry.email || '').toLowerCase().trim();
+      if (!email || !email.includes('@')) {
+        results.failed.push({ email: entry.email || '(blank)', error: 'Invalid email' });
+        continue;
+      }
+      batch.set(
+        doc(db, 'roster', email),
+        {
+          email,
+          displayName: entry.displayName || '',
+          role: entry.role || 'student',
+          gradeLevel: entry.gradeLevel ?? null,
+          studentId: entry.studentId || '',
+          tenantId,
+          status: 'invited',
+          updatedAt: serverTimestamp()
+        },
+        { merge: true }
+      );
+      results.successful += 1;
+    }
+    await batch.commit();
+  }
+
+  await logAdminAction('roster_imported', 'roster', null, {
+    tenantId,
+    successful: results.successful,
+    failed: results.failed.length,
+    total: results.total
+  });
+  return results;
+};
+
+export const getRosterEntries = async (tenantId = 'default', max = 500) => {
+  try {
+    const q = query(collection(db, 'roster'), where('tenantId', '==', tenantId), limit(max));
+    const snap = await getDocs(q);
+    return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  } catch (error) {
+    console.error('Error loading roster:', error);
+    throw error;
+  }
+};
+
+export const removeRosterEntry = async (email) => {
+  await deleteDoc(doc(db, 'roster', (email || '').toLowerCase()));
+  await logAdminAction('roster_entry_removed', 'roster', email, {});
+  return true;
+};
+
+export const getAccessControlSettings = async () => {
+  const snap = await getDoc(doc(db, 'systemSettings', 'accessControl'));
+  return snap.exists()
+    ? snap.data()
+    : { allowedDomains: ['rochesterschools.org'], enforceRoster: true, tenantId: 'default' };
+};
+
+export const saveAccessControlSettings = async (settings) => {
+  await setDoc(
+    doc(db, 'systemSettings', 'accessControl'),
+    { ...settings, updatedAt: serverTimestamp() },
+    { merge: true }
+  );
+  await logAdminAction('access_control_updated', 'systemSettings', 'accessControl', settings);
+  return true;
+};
