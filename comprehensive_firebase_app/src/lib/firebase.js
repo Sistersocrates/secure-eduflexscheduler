@@ -21,14 +21,15 @@ import {
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 // Firebase configuration
+// Firebase web app config (public client identifiers, safe to commit)
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
+  apiKey: 'AIzaSyAn1q6kvF031j5Idb8G7agBuz02PcCjPmY',
+  authDomain: 'seminar-management-29c9f.firebaseapp.com',
+  projectId: 'seminar-management-29c9f',
+  storageBucket: 'seminar-management-29c9f.firebasestorage.app',
+  messagingSenderId: '1075132623899',
+  appId: '1:1075132623899:web:9a86e0815c9912bd1cdcbe',
+  measurementId: 'G-Z8JWX9YMR7'
 };
 
 // Initialize Firebase
