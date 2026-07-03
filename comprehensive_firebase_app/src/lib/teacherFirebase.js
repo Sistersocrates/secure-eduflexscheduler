@@ -171,8 +171,8 @@ export const getTeacherClasses = async (teacherId, filters = {}) => {
     const querySnapshot = await getDocs(q);
     const classes = [];
 
-    querySnapshot.forEach((doc) => {
-      const classData = { id: doc.id, ...doc.data() };
+    querySnapshot.forEach((docSnap) => {
+      const classData = { id: docSnap.id, ...docSnap.data() };
       
       // Convert Firestore timestamps to JavaScript dates
       if (classData.startDate) {
@@ -308,8 +308,8 @@ export const getClassRoster = async (teacherId, classId) => {
     const enrollmentsSnapshot = await getDocs(enrollmentsQuery);
     const roster = [];
 
-    for (const doc of enrollmentsSnapshot.docs) {
-      const enrollment = { id: doc.id, ...doc.data() };
+    for (const docSnap of enrollmentsSnapshot.docs) {
+      const enrollment = { id: docSnap.id, ...docSnap.data() };
       
       // Get student details
       const studentRef = doc(db, 'users', enrollment.studentId);
@@ -364,8 +364,8 @@ export const getClassWaitlist = async (teacherId, classId) => {
     const waitlistSnapshot = await getDocs(waitlistQuery);
     const waitlist = [];
 
-    for (const doc of waitlistSnapshot.docs) {
-      const enrollment = { id: doc.id, ...doc.data() };
+    for (const docSnap of waitlistSnapshot.docs) {
+      const enrollment = { id: docSnap.id, ...docSnap.data() };
       
       // Get student details
       const studentRef = doc(db, 'users', enrollment.studentId);
@@ -572,8 +572,8 @@ export const getClassAttendance = async (teacherId, classId, filters = {}) => {
     const querySnapshot = await getDocs(q);
     const attendance = [];
 
-    for (const doc of querySnapshot.docs) {
-      const attendanceData = { id: doc.id, ...doc.data() };
+    for (const docSnap of querySnapshot.docs) {
+      const attendanceData = { id: docSnap.id, ...docSnap.data() };
       
       // Convert timestamp to date
       if (attendanceData.date) {
@@ -706,8 +706,8 @@ export const getTeacherResourceRequests = async (teacherId, filters = {}) => {
     const querySnapshot = await getDocs(q);
     const requests = [];
 
-    querySnapshot.forEach((doc) => {
-      const requestData = { id: doc.id, ...doc.data() };
+    querySnapshot.forEach((docSnap) => {
+      const requestData = { id: docSnap.id, ...docSnap.data() };
       
       // Convert timestamps
       if (requestData.neededByDate) {
@@ -819,3 +819,184 @@ export const subscribeToResourceRequests = (teacherId, callback) => {
   return onSnapshot(q, callback);
 };
 
+
+// ============ Class Resources ============
+
+export const uploadClassResource = async (teacherId, classId, file, metadata = {}) => {
+  try {
+    const storageRef = ref(storage, `resources/${classId}/${Date.now()}_${file.name}`);
+    const snapshot = await uploadBytes(storageRef, file);
+    const downloadURL = await getDownloadURL(snapshot.ref);
+
+    const resourceDoc = await addDoc(collection(db, 'resources'), {
+      teacherId,
+      classId,
+      name: metadata.name || file.name,
+      description: metadata.description || '',
+      type: metadata.type || file.type || 'file',
+      size: file.size || 0,
+      storagePath: snapshot.ref.fullPath,
+      url: downloadURL,
+      createdAt: serverTimestamp()
+    });
+
+    await createAuditLog(teacherId, 'resource_uploaded', 'resource', resourceDoc.id, { classId, name: file.name });
+    return { id: resourceDoc.id, url: downloadURL };
+  } catch (error) {
+    console.error('Error uploading class resource:', error);
+    throw error;
+  }
+};
+
+export const getClassResources = async (teacherId, classId) => {
+  try {
+    const q = query(
+      collection(db, 'resources'),
+      where('classId', '==', classId),
+      orderBy('createdAt', 'desc')
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+  } catch (error) {
+    console.error('Error getting class resources:', error);
+    throw error;
+  }
+};
+
+export const deleteResource = async (teacherId, classId, resourceId) => {
+  try {
+    const resourceRef = doc(db, 'resources', resourceId);
+    const resourceSnap = await getDoc(resourceRef);
+
+    if (resourceSnap.exists()) {
+      const data = resourceSnap.data();
+      if (data.storagePath) {
+        try {
+          await deleteObject(ref(storage, data.storagePath));
+        } catch (e) {
+          console.warn('Storage object already removed:', e.message);
+        }
+      }
+    }
+
+    await deleteDoc(resourceRef);
+    await createAuditLog(teacherId, 'resource_deleted', 'resource', resourceId, { classId });
+    return true;
+  } catch (error) {
+    console.error('Error deleting resource:', error);
+    throw error;
+  }
+};
+
+// ============ Content generation (template-based, runs locally) ============
+
+export const generateLessonPlan = async (className, promptText = '') => {
+  const topic = promptText || className;
+  return [
+    `LESSON PLAN: ${topic}`,
+    `Class: ${className}`,
+    '',
+    'OBJECTIVES',
+    `- Students will be able to explain the key concepts of ${topic}.`,
+    `- Students will practice applying ${topic} through guided activities.`,
+    '',
+    'WARM-UP (10 min)',
+    `- Quick discussion: what do students already know about ${topic}?`,
+    '',
+    'DIRECT INSTRUCTION (15 min)',
+    `- Introduce the main ideas of ${topic} with examples.`,
+    '',
+    'GUIDED PRACTICE (20 min)',
+    '- Small-group activity applying the concepts. Circulate and support.',
+    '',
+    'CLOSURE (10 min)',
+    '- Exit ticket: one thing learned, one question remaining.',
+    '',
+    'MATERIALS',
+    '- Whiteboard, handouts, student devices as needed.',
+    '',
+    'ASSESSMENT',
+    '- Participation in group work and exit ticket responses.'
+  ].join('\n');
+};
+
+export const generateClassContent = async (className, contentType, promptText = '') => {
+  const topic = promptText || className;
+  const templates = {
+    activity: [
+      `ACTIVITY: ${topic}`,
+      '',
+      '1. Split the class into groups of 3-4.',
+      `2. Each group explores one aspect of ${topic} and prepares a 2-minute share-out.`,
+      '3. Groups present; class notes one insight from each group.',
+      '4. Debrief: how do the pieces connect?'
+    ],
+    assessment: [
+      `ASSESSMENT: ${topic}`,
+      '',
+      `1. Define ${topic} in your own words. (2 pts)`,
+      `2. Give a real-world example of ${topic}. (3 pts)`,
+      `3. Explain why ${topic} matters, with at least two reasons. (5 pts)`
+    ],
+    discussion: [
+      `DISCUSSION PROMPTS: ${topic}`,
+      '',
+      `- What surprised you most about ${topic}?`,
+      `- How does ${topic} connect to your own experience?`,
+      `- What would you want to ask an expert about ${topic}?`
+    ]
+  };
+  return (templates[contentType] || templates.activity).join('\n');
+};
+
+// ============ Grading ============
+
+export const saveGrade = async (teacherId, classId, studentId, gradeData) => {
+  try {
+    const q = query(
+      collection(db, 'grades'),
+      where('classId', '==', classId),
+      where('studentId', '==', studentId)
+    );
+    const existing = await getDocs(q);
+
+    if (!existing.empty) {
+      const gradeRef = doc(db, 'grades', existing.docs[0].id);
+      await updateDoc(gradeRef, {
+        ...gradeData,
+        teacherId,
+        updatedAt: serverTimestamp()
+      });
+      await createAuditLog(teacherId, 'grade_updated', 'grade', existing.docs[0].id, { classId, studentId });
+      return { id: existing.docs[0].id, ...gradeData };
+    }
+
+    const gradeRef = await addDoc(collection(db, 'grades'), {
+      teacherId,
+      classId,
+      studentId,
+      ...gradeData,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+    await createAuditLog(teacherId, 'grade_created', 'grade', gradeRef.id, { classId, studentId });
+    return { id: gradeRef.id, ...gradeData };
+  } catch (error) {
+    console.error('Error saving grade:', error);
+    throw error;
+  }
+};
+
+export const getClassGrades = async (teacherId, classId) => {
+  try {
+    const q = query(
+      collection(db, 'grades'),
+      where('classId', '==', classId)
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+  } catch (error) {
+    console.error('Error getting class grades:', error);
+    throw error;
+  }
+};

@@ -165,8 +165,8 @@ export const getAvailableClasses = async (filters = {}) => {
     const querySnapshot = await getDocs(q);
     const classes = [];
     
-    querySnapshot.forEach((doc) => {
-      classes.push({ id: doc.id, ...doc.data() });
+    querySnapshot.forEach((docSnap) => {
+      classes.push({ id: docSnap.id, ...docSnap.data() });
     });
     
     return classes;
@@ -244,8 +244,8 @@ export const getStudentEnrollments = async (studentId) => {
     const querySnapshot = await getDocs(q);
     const enrollments = [];
     
-    for (const doc of querySnapshot.docs) {
-      const enrollmentData = { id: doc.id, ...doc.data() };
+    for (const docSnap of querySnapshot.docs) {
+      const enrollmentData = { id: docSnap.id, ...docSnap.data() };
       
       // Get class details
       const classRef = doc(db, 'classes', enrollmentData.classId);
@@ -278,8 +278,8 @@ export const getStudentSchedule = async (studentId, dateRange = null) => {
     const enrollmentsSnapshot = await getDocs(enrollmentsQuery);
     const schedule = [];
     
-    for (const doc of enrollmentsSnapshot.docs) {
-      const enrollment = doc.data();
+    for (const docSnap of enrollmentsSnapshot.docs) {
+      const enrollment = docSnap.data();
       
       // Get class details
       const classRef = doc(db, 'classes', enrollment.classId);
@@ -288,7 +288,7 @@ export const getStudentSchedule = async (studentId, dateRange = null) => {
       if (classSnap.exists()) {
         const classData = classSnap.data();
         schedule.push({
-          id: doc.id,
+          id: docSnap.id,
           type: 'class',
           title: classData.title,
           description: classData.description,
@@ -318,10 +318,10 @@ export const getStudentSchedule = async (studentId, dateRange = null) => {
     
     const appointmentsSnapshot = await getDocs(appointmentsQuery);
     
-    appointmentsSnapshot.forEach((doc) => {
-      const appointment = doc.data();
+    appointmentsSnapshot.forEach((docSnap) => {
+      const appointment = docSnap.data();
       schedule.push({
-        id: doc.id,
+        id: docSnap.id,
         type: 'appointment',
         title: appointment.title,
         description: appointment.description,
@@ -351,8 +351,8 @@ export const getAvailableSpecialists = async () => {
     const querySnapshot = await getDocs(q);
     const specialists = [];
     
-    querySnapshot.forEach((doc) => {
-      specialists.push({ id: doc.id, ...doc.data() });
+    querySnapshot.forEach((docSnap) => {
+      specialists.push({ id: docSnap.id, ...docSnap.data() });
     });
     
     return specialists;
@@ -411,8 +411,8 @@ export const getStudentAttendance = async (studentId, filters = {}) => {
     const querySnapshot = await getDocs(q);
     const attendance = [];
     
-    querySnapshot.forEach((doc) => {
-      attendance.push({ id: doc.id, ...doc.data() });
+    querySnapshot.forEach((docSnap) => {
+      attendance.push({ id: docSnap.id, ...docSnap.data() });
     });
     
     return attendance;
@@ -435,8 +435,8 @@ export const getStudentCredits = async (studentId) => {
     let totalCredits = 0;
     const creditsByType = {};
     
-    querySnapshot.forEach((doc) => {
-      const credit = { id: doc.id, ...doc.data() };
+    querySnapshot.forEach((docSnap) => {
+      const credit = { id: docSnap.id, ...docSnap.data() };
       credits.push(credit);
       
       totalCredits += credit.creditAmount || 0;
@@ -479,8 +479,8 @@ export const getStudentNotifications = async (studentId, filters = {}) => {
     const querySnapshot = await getDocs(q);
     const notifications = [];
     
-    querySnapshot.forEach((doc) => {
-      notifications.push({ id: doc.id, ...doc.data() });
+    querySnapshot.forEach((docSnap) => {
+      notifications.push({ id: docSnap.id, ...docSnap.data() });
     });
     
     return notifications;
