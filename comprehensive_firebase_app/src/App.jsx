@@ -7,6 +7,9 @@ import LoginPage from './pages/LoginPage';
 import HomePage from './pages/HomePage';
 import SpecialistDashboard from './components/specialist/SpecialistDashboard';
 import AdminDashboard from './components/admin/AdminDashboard';
+import ClassManagement from './components/teacher/ClassManagement';
+import OfficeDashboard from './components/admin/OfficeDashboard';
+import AttendanceManagement from './components/teacher/AttendanceManagement';
 
 // Placeholder components for future implementation
 const PlaceholderPage = ({ title, description }) => (
@@ -95,12 +98,15 @@ function App() {
             } />
             
             {/* Teacher Routes */}
+            <Route path="/create-seminar" element={
+              <ProtectedRoute>
+                <ClassManagement />
+              </ProtectedRoute>
+            } />
+            
             <Route path="/my-seminars" element={
               <ProtectedRoute>
-                <PlaceholderPage 
-                  title="My Seminars" 
-                  description="Manage your seminars and course content"
-                />
+                <ClassManagement />
               </ProtectedRoute>
             } />
             
@@ -115,10 +121,7 @@ function App() {
             
             <Route path="/attendance" element={
               <ProtectedRoute>
-                <PlaceholderPage 
-                  title="Attendance" 
-                  description="Take and manage student attendance"
-                />
+                <AttendanceManagement />
               </ProtectedRoute>
             } />
             
@@ -190,7 +193,7 @@ function App() {
               <ProtectedRoute>
                 <PlaceholderPage 
                   title="Resources" 
-                  description="Access counseling resources and materials"
+                  description="Access teaching resources and materials"
                 />
               </ProtectedRoute>
             } />
@@ -266,6 +269,12 @@ function App() {
             } />
             
             {/* Admin Routes */}
+            <Route path="/office" element={
+              <ProtectedRoute requiredRole="admin">
+                <OfficeDashboard />
+              </ProtectedRoute>
+            } />
+            
             <Route path="/admin" element={
               <ProtectedRoute requiredRole="admin">
                 <AdminDashboard />
