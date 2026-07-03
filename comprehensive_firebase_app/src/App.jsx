@@ -9,6 +9,7 @@ import SpecialistDashboard from './components/specialist/SpecialistDashboard';
 import AdminDashboard from './components/admin/AdminDashboard';
 import ClassManagement from './components/teacher/ClassManagement';
 import OfficeDashboard from './components/admin/OfficeDashboard';
+import UserImport from './components/admin/UserImport';
 import AttendanceManagement from './components/teacher/AttendanceManagement';
 import ResourceManagement from './components/teacher/ResourceManagement';
 import GradingManagement from './components/teacher/GradingManagement';
@@ -231,6 +232,12 @@ function App() {
             } />
             
             {/* Admin Routes */}
+            <Route path="/admin/user-import" element={
+              <ProtectedRoute requiredRole="admin">
+                <UserImport />
+              </ProtectedRoute>
+            } />
+            
             <Route path="/office" element={
               <ProtectedRoute requiredRole="admin">
                 <OfficeDashboard />
