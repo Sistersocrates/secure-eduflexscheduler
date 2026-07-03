@@ -74,7 +74,7 @@ const LoginPage = () => {
         });
       }
     } catch (error) {
-      setError('Failed to sign in. Please try again.');
+      setError(error?.message || 'Failed to sign in. Please try again.');
       console.error('Sign in error:', error);
     } finally {
       setIsSigningIn(false);

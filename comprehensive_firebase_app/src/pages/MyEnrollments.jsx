@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../components/AuthProvider';
-import { getStudentEnrollments } from '../lib/firebase';
+import { getStudentEnrollments, dropClass } from '../lib/firebase';
 import { GraduationCap } from 'lucide-react';
 
 const statusColors = {
@@ -18,6 +18,7 @@ const MyEnrollments = () => {
   const [enrollments, setEnrollments] = useState([]);
   const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(true);
+  const [busyId, setBusyId] = useState(null);
 
   useEffect(() => {
     const load = async () => {
@@ -33,6 +34,20 @@ const MyEnrollments = () => {
     };
     if (user) load();
   }, [user]);
+
+  const handleDrop = async (enrollment) => {
+    const title = enrollment.classDetails?.title || 'this class';
+    if (!window.confirm(`Drop ${title}? If a waitlist exists, your seat goes to the next student.`)) return;
+    try {
+      setBusyId(enrollment.id);
+      await dropClass(user.uid, enrollment.id);
+      setEnrollments((prev) => prev.map((e) => (e.id === enrollment.id ? { ...e, status: 'dropped' } : e)));
+    } catch (e) {
+      console.error('Drop failed:', e);
+    } finally {
+      setBusyId(null);
+    }
+  };
 
   const filtered = filter === 'all' ? enrollments : enrollments.filter((e) => e.status === filter);
 
@@ -76,9 +91,20 @@ const MyEnrollments = () => {
                   {e.status === 'waitlisted' && e.waitlistPosition ? ` · Waitlist position ${e.waitlistPosition}` : ''}
                 </p>
               </div>
-              <span className={`ml-3 shrink-0 px-2.5 py-1 rounded-full text-xs font-medium ${statusColors[e.status] || 'bg-gray-100 text-gray-600'}`}>
-                {e.status}
-              </span>
+              <div className="flex items-center gap-2 shrink-0 ml-3">
+                <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${statusColors[e.status] || 'bg-gray-100 text-gray-600'}`}>
+                  {e.status}
+                </span>
+                {(e.status === 'enrolled' || e.status === 'waitlisted') && (
+                  <button
+                    onClick={() => handleDrop(e)}
+                    disabled={busyId === e.id}
+                    className="text-xs text-red-600 hover:underline disabled:opacity-50"
+                  >
+                    {busyId === e.id ? 'Dropping…' : 'Drop'}
+                  </button>
+                )}
+              </div>
             </div>
           ))}
         </div>
