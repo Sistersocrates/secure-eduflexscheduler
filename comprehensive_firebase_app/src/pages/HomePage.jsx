@@ -26,7 +26,8 @@ import {
   Lock,
   Monitor,
   Zap,
-  Globe
+  Globe,
+  MapPin
 } from 'lucide-react';
 
 const HomePage = () => {
@@ -120,6 +121,7 @@ const HomePage = () => {
         { name: 'Progress Tracking', href: '/progress-tracking', icon: TrendingUp, color: 'orange' }
       ],
       admin: [
+        { name: 'Office Hub', href: '/office', icon: MapPin, color: 'blue' },
         { name: 'User Management', href: '/admin/users', icon: Users, color: 'blue' },
         { name: 'System Analytics', href: '/admin/analytics', icon: BarChart3, color: 'green' },
         { name: 'Security Center', href: '/admin/security', icon: Shield, color: 'red' },
