@@ -3,7 +3,7 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '../components/AuthProvider';
 
 const LoginPage = () => {
-  const { isAuthenticated, signIn, loading } = useAuth();
+  const { isAuthenticated, signIn, loading, authError } = useAuth();
   const [error, setError] = useState('');
 
   if (isAuthenticated) {
@@ -38,9 +38,9 @@ const LoginPage = () => {
         <div className="mt-8 space-y-6">
           <div className="bg-white py-8 px-6 shadow rounded-lg">
             <div className="space-y-6">
-              {error && (
+              {(error || authError) && (
                 <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-                  {error}
+                  {error || authError}
                 </div>
               )}
               

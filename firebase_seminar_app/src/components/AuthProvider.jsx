@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
-import { auth, signInWithGoogle, signOutUser } from '../lib/firebase';
+import { auth, completeGoogleRedirect, signInWithGoogle, signOutUser } from '../lib/firebase';
 
 const AuthContext = createContext({});
 
@@ -15,18 +15,30 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [authError, setAuthError] = useState(null);
 
   useEffect(() => {
+    let active = true;
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
+      if (active) setUser(user);
+    });
+
+    completeGoogleRedirect().then((result) => {
+      if (!active) return;
+      if (result.user) setUser(result.user);
+      setAuthError(result.error);
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      active = false;
+      unsubscribe();
+    };
   }, []);
 
   const signIn = async () => {
     setLoading(true);
+    setAuthError(null);
     try {
       const result = await signInWithGoogle();
       return result;
@@ -34,6 +46,8 @@ export const AuthProvider = ({ children }) => {
       console.error('Sign in error:', error);
       return { user: null, error: error.message };
     } finally {
+      // A successful redirect navigates away immediately; this also restores
+      // the button if Firebase rejects before navigation begins.
       setLoading(false);
     }
   };
@@ -55,6 +69,7 @@ export const AuthProvider = ({ children }) => {
   const value = {
     user,
     loading,
+    authError,
     signIn,
     signOut,
     isAuthenticated: !!user,

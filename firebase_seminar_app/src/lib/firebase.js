@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, doc, setDoc, getDoc, collection, addDoc, query, where, getDocs, serverTimestamp } from 'firebase/firestore';
 import { getAnalytics } from 'firebase/analytics';
 import { z } from 'zod';
@@ -7,7 +7,11 @@ import { z } from 'zod';
 // Firebase configuration
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  // Keep the OAuth helper on the same site in production. This avoids popup
+  // lifecycle and third-party storage failures on the custom domain.
+  authDomain: ['eduflexscheduler.com', 'www.eduflexscheduler.com'].includes(window.location.hostname)
+    ? window.location.hostname
+    : import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
@@ -83,28 +87,37 @@ export const signInWithGoogle = async () => {
     provider.addScope('email');
     provider.addScope('profile');
     
-    const result = await signInWithPopup(auth, provider);
+    await signInWithRedirect(auth, provider);
+    return { user: null, error: null, redirecting: true };
+  } catch (error) {
+    console.error('Sign in error:', error);
+    return { user: null, error: error.message };
+  }
+};
+
+// Complete Google sign-in after Firebase returns to the application.
+export const completeGoogleRedirect = async () => {
+  try {
+    const result = await getRedirectResult(auth);
+    if (!result) return { user: null, error: null };
+
     const user = result.user;
-    
-    // SECURITY: Validate user data
     const validatedUser = studentSchema.parse({
       uid: user.uid,
       email: user.email,
       displayName: user.displayName,
       photoURL: user.photoURL,
     });
-    
-    // Create or update user document
+
     await createOrUpdateStudent(validatedUser);
-    
     await auditLog('user_login', user.uid, 'authentication', 'login', {
       email: user.email,
-      method: 'google',
+      method: 'google_redirect',
     });
-    
+
     return { user, error: null };
   } catch (error) {
-    console.error('Sign in error:', error);
+    console.error('Redirect sign in error:', error);
     return { user: null, error: error.message };
   }
 };
