@@ -3,7 +3,7 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from './AuthProvider';
 
 const ProtectedRoute = ({ children, requiredRole = null }) => {
-  const { user, userRole, loading } = useAuth();
+  const { user, userRole, canSwitchRoles, loading } = useAuth();
 
   if (loading) {
     return (
@@ -17,7 +17,7 @@ const ProtectedRoute = ({ children, requiredRole = null }) => {
     return <Navigate to="/login" replace />;
   }
 
-  if (requiredRole && userRole !== requiredRole) {
+  if (requiredRole && !canSwitchRoles && userRole !== requiredRole) {
     return (
       <div className="text-center py-12">
         <h1 className="text-2xl font-bold text-gray-900">Access Denied</h1>

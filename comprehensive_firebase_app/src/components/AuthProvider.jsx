@@ -4,6 +4,21 @@ import { auth, getUserProfile } from '../lib/firebase';
 
 const AuthContext = createContext({});
 
+// Accounts allowed to "view as" any role (demo / staff review).
+export const ROLE_SWITCHER_EMAILS = [
+  'danielle.staley3@gmail.com',
+  'dastaley@rochesterschools.org',
+  'mizinnel@rochesterschools.org',
+  'judoschadis@rochesterschools.org',
+  'kelynch2@rochesterschools.org',
+  'maholtorf@rochesterschools.org'
+];
+export const SWITCHABLE_ROLES = ['student', 'teacher', 'counselor', 'specialist', 'admin'];
+const ACTING_ROLE_KEY = 'eduflex_acting_role';
+const readActingRole = () => {
+  try { return localStorage.getItem(ACTING_ROLE_KEY); } catch { return null; }
+};
+
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
@@ -17,6 +32,7 @@ export const AuthProvider = ({ children }) => {
   const [userRole, setUserRole] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [actingRole, setActingRoleState] = useState(readActingRole());
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -51,18 +67,33 @@ export const AuthProvider = ({ children }) => {
     return unsubscribe;
   }, []);
 
+  const canSwitchRoles = !!user?.email && ROLE_SWITCHER_EMAILS.includes(user.email.toLowerCase());
+  const storedRole = userRole;
+  const effectiveRole = canSwitchRoles
+    ? (SWITCHABLE_ROLES.includes(actingRole) ? actingRole : 'admin')
+    : storedRole;
+
+  const setActingRole = (role) => {
+    if (!canSwitchRoles || !SWITCHABLE_ROLES.includes(role)) return;
+    setActingRoleState(role);
+    try { localStorage.setItem(ACTING_ROLE_KEY, role); } catch { /* ignore */ }
+  };
+
   const value = {
     user,
-    userRole,
+    userRole: effectiveRole,
+    storedRole,
+    canSwitchRoles,
+    setActingRole,
     userProfile,
     loading,
     // Helper functions
-    isStudent: userRole === 'student',
-    isTeacher: userRole === 'teacher',
-    isCounselor: userRole === 'counselor',
-    isAdmin: userRole === 'admin',
-    hasRole: (role) => userRole === role,
-    hasAnyRole: (roles) => roles.includes(userRole)
+    isStudent: effectiveRole === 'student',
+    isTeacher: effectiveRole === 'teacher',
+    isCounselor: effectiveRole === 'counselor',
+    isAdmin: effectiveRole === 'admin',
+    hasRole: (role) => effectiveRole === role,
+    hasAnyRole: (roles) => roles.includes(effectiveRole)
   };
 
   return (
