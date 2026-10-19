@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../AuthProvider';
+import { useAuth, SWITCHABLE_ROLES } from '../AuthProvider';
 import { signOutUser } from '../../lib/firebase';
 import {
   Menu,
@@ -29,7 +29,7 @@ import {
 } from 'lucide-react';
 
 const Navigation = () => {
-  const { user, userRole } = useAuth();
+  const { user, userRole, canSwitchRoles, setActingRole } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -42,6 +42,19 @@ const Navigation = () => {
     } catch (error) {
       console.error('Sign out error:', error);
     }
+  };
+
+  const ROLE_HOME = {
+    student: '/dashboard',
+    teacher: '/dashboard',
+    counselor: '/student-management',
+    specialist: '/specialist-appointments',
+    admin: '/admin'
+  };
+
+  const handleRoleSwitch = (role) => {
+    setActingRole(role);
+    navigate(ROLE_HOME[role] || '/dashboard');
   };
 
   // Role-based navigation items
@@ -188,6 +201,20 @@ const Navigation = () => {
 
           {/* User profile dropdown */}
           <div className="flex items-center space-x-4">
+            {canSwitchRoles && (
+              <select
+                value={userRole || 'admin'}
+                onChange={(e) => handleRoleSwitch(e.target.value)}
+                title="Switch dashboard"
+                aria-label="Switch dashboard"
+                className="text-sm border border-gray-300 rounded-md px-2 py-1 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {SWITCHABLE_ROLES.map((r) => (
+                  <option key={r} value={r}>View as {r.charAt(0).toUpperCase() + r.slice(1)}</option>
+                ))}
+              </select>
+            )}
+
             {/* Role badge */}
             <span className={`px-2 py-1 text-xs font-medium rounded-full ${getRoleBadgeColor(userRole)}`}>
               {userRole?.charAt(0).toUpperCase() + userRole?.slice(1)}
