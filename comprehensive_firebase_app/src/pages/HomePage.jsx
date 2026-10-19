@@ -38,12 +38,18 @@ const HomePage = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let cancelled = false;
+    setStats({});
+    setRecentActivity([]);
+    setUpcomingSeminars([]);
+    setLoading(true);
     const loadDashboardData = async () => {
       try {
         if (userRole === 'student') {
           const enrollments = await getStudentEnrollments(user.uid);
           const classes = await getAvailableClasses();
           
+          if (cancelled) return;
           setStats({
             enrolledSeminars: enrollments.length,
             completedSeminars: enrollments.filter(e => e.status === 'completed').length,
@@ -60,6 +66,7 @@ const HomePage = () => {
         } else if (userRole === 'teacher') {
           const classes = await getAvailableClasses();
           
+          if (cancelled) return;
           setStats({
             mySeminars: classes.length,
             totalStudents: classes.reduce((sum, s) => sum + (s.currentEnrollment || 0), 0),
@@ -76,13 +83,14 @@ const HomePage = () => {
       } catch (error) {
         console.error('Error loading dashboard data:', error);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
     if (user && userRole) {
       loadDashboardData();
     }
+    return () => { cancelled = true; };
   }, [user, userRole]);
 
   const getGreeting = () => {

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth, getUserProfile } from '../lib/firebase';
+import { canSwitchDashboards, DASHBOARD_ROLES } from '../lib/dashboardAccess';
 
 const AuthContext = createContext({});
 
@@ -18,8 +19,23 @@ export const AuthProvider = ({ children }) => {
   const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // View selection is scoped to this signed-in UID; it never updates Firestore roles.
+  const [dashboardSelection, setDashboardSelection] = useState(null);
+  const canSwitchDashboard = canSwitchDashboards(user);
+  const activeRole = canSwitchDashboard && dashboardSelection?.uid === user?.uid
+    ? dashboardSelection.role : userRole;
+  const switchDashboard = (role) => {
+    if (!canSwitchDashboard || !DASHBOARD_ROLES.includes(role)) return false;
+    setDashboardSelection({ uid: user.uid, role });
+    return true;
+  };
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      setDashboardSelection(null);
+      setUserRole(null);
+      setUserProfile(null);
+      setLoading(true);
       setUser(user);
       
       if (user) {
@@ -53,16 +69,19 @@ export const AuthProvider = ({ children }) => {
 
   const value = {
     user,
-    userRole,
+    userRole: activeRole,
+    accountRole: userRole,
+    canSwitchDashboard,
+    switchDashboard,
     userProfile,
     loading,
     // Helper functions
-    isStudent: userRole === 'student',
-    isTeacher: userRole === 'teacher',
-    isCounselor: userRole === 'counselor',
-    isAdmin: userRole === 'admin',
-    hasRole: (role) => userRole === role,
-    hasAnyRole: (roles) => roles.includes(userRole)
+    isStudent: activeRole === 'student',
+    isTeacher: activeRole === 'teacher',
+    isCounselor: activeRole === 'counselor',
+    isAdmin: activeRole === 'admin',
+    hasRole: (role) => activeRole === role,
+    hasAnyRole: (roles) => roles.includes(activeRole)
   };
 
   return (

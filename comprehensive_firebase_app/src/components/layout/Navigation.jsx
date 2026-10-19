@@ -29,7 +29,7 @@ import {
 } from 'lucide-react';
 
 const Navigation = () => {
-  const { user, userRole } = useAuth();
+  const { user, userRole, canSwitchDashboard, switchDashboard } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -263,6 +263,34 @@ const Navigation = () => {
           </div>
         </div>
       </div>
+
+      {canSwitchDashboard && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap items-center gap-3 border-t border-gray-100">
+          <label htmlFor="dashboard-switcher" className="text-sm font-medium text-gray-700">
+            Switch dashboard
+          </label>
+          <select
+            id="dashboard-switcher"
+            value={location.pathname === '/office' ? 'office' : userRole}
+            onChange={(event) => {
+              const target = event.target.value;
+              if (!switchDashboard(target === 'office' ? 'admin' : target)) return;
+              setIsMobileMenuOpen(false);
+              setIsProfileDropdownOpen(false);
+              navigate(target === 'office' ? '/office' : target === 'admin' ? '/admin' : target === 'specialist' ? '/specialist-dashboard' : '/dashboard');
+            }}
+            className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="" disabled>Choose a dashboard</option>
+            <option value="student">Student</option>
+            <option value="teacher">Teacher</option>
+            <option value="counselor">Counselor</option>
+            <option value="specialist">Specialist / Social Worker</option>
+            <option value="admin">Administrator</option>
+            <option value="office">Office Hub</option>
+          </select>
+        </div>
+      )}
 
       {/* Mobile menu */}
       {isMobileMenuOpen && (
